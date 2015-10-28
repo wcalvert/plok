@@ -3,9 +3,11 @@
 
 #include "stdint.h"
 
-typedef enum bool {
-    FALSE = 0, TRUE
-} bool;
+#ifdef DEBUG
+#define debug(...) printf(__VA_ARGS__)
+#else
+#define debug(...)
+#endif
 
 #if __WORDSIZE == 32
 typedef uint32_t DWORD;

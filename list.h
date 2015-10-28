@@ -1,7 +1,7 @@
 #ifndef _LIST_H_
 #define _LIST_H_
 
-#include "defines.h"
+//#include "defines.h"
 #include "types.h"
 
 typedef struct node {

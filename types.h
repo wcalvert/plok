@@ -1,40 +1,32 @@
 #ifndef _TYPES_H_
 #define _TYPES_H_
 
-typedef enum {
-    INTEGER, FLOAT, STRING
-} object_type;
-
 typedef struct object {
-    object_type o_type;
-    void (*destructor)(struct object **o);
+    struct object_vtable *vtable;
 } object;
 
 typedef struct int_obj {
-    object_type o_type;
-    void (*destructor)(struct int_obj **i);
+    object object;
     int val;
 } int_obj;
 
 typedef struct float_obj {
-    object_type o_type;
-    void (*destructor)(struct float_obj **f);
+    object object;
     float val;
 } float_obj;
 
 typedef struct string_obj {
-    object_type o_type;
-    void (*destructor)(struct string_obj **s);
-    char * str;
+    object object;
+    char *str;
     size_t len;
 } string_obj;
 
+void object_destructor(object *o);
+char * object_to_string(object *o);
+int object_compare(object *o1, object *o2);
 
-int_obj * int_factory(int initial);
-void int_destructor(int_obj **n);
-float_obj * float_factory(float initial);
-void float_destructor(float_obj **n);
-string_obj * string_factory(const char * initial);
-void string_destructor(string_obj **s);
+object * int_factory(int initial);
+object * float_factory(float initial);
+object * string_factory(const char *initial);
 
 #endif

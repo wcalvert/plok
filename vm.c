@@ -3,12 +3,7 @@
 #include <string.h>
 #include "stack_frame.h"
 #include "vm.h"
-
-#ifdef DEBUG
-#define debug(...) printf(__VA_ARGS__)
-#else
-#define debug(...)
-#endif
+#include "defines.h"
 
 void vm_error(error_t e) {
     switch(e) {
@@ -23,17 +18,18 @@ void vm_error(error_t e) {
             break;
         case ERR_INVALID_BUILTIN:
             fprintf(stderr, "ERR_INVALID_BUILTIN: attempted to call unknown built-in method\n");
+            break;
         default:
             fprintf(stderr, "Unknown error!\n");
             break;
     }
+    exit(-1);
 }
 
 inline void invoke_builtin(builtin_method_t method, stack_frame *sf) {
     int i;
     node_t *list_val = NULL;
-    string_obj *stemp = NULL;
-
+    
     switch(method) {
         case STACK_PRINT_INT:
             i = stack_pop(sf->s);
@@ -42,8 +38,9 @@ inline void invoke_builtin(builtin_method_t method, stack_frame *sf) {
         case LOCAL_PRINT_STRING:
             i = stack_pop(sf->s);
             list_val = list_get(sf->locals, i);
-            stemp = (string_obj *) list_val->element;
-            printf("%s\n", stemp->str);
+            char *temp = object_to_string(list_val->element);
+            printf("%s\n", temp);
+            free(temp);
             break;
         default:
             vm_error(ERR_INVALID_BUILTIN);
@@ -56,14 +53,10 @@ int main(void) {
 
     stack_frame *sf = stack_frame_factory();
 
-    int_obj *i = int_factory(123);
-    list_append(sf->locals, (object*)i);
-    i = int_factory(456);
-    list_append(sf->locals, (object*)i);
-    string_obj *s = string_factory("Hello World");
-    list_append(sf->locals, (object*)s);
-    float_obj *f = float_factory(1.21f);
-    list_append(sf->locals, (object*)f);
+    list_append(sf->locals, int_factory(123));
+    list_append(sf->locals, int_factory(456));
+    list_append(sf->locals, float_factory(1.21f));
+    //list_append(sf->constants, string_factory("Hello World"));
 
     // Currently, byte code needs to be created by hand. This code just does some very basic operations.
 
@@ -120,7 +113,7 @@ int main(void) {
             }
             list_val = list_get(sf->locals, index);
             itemp = (int_obj*) list_val->element;
-            stack_push(sf->s, i->val);
+            stack_push(sf->s, itemp->val);
             DISPATCH();
         op_istore:
             debug("got istore\n");

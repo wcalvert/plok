@@ -6,6 +6,7 @@
 
 typedef struct stack_frame {
     list_t *locals;
+    list_t *constants;
     stack *s;
     unsigned int pc;
 } stack_frame;

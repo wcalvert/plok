@@ -1,6 +1,7 @@
 #ifndef _STACK_H_
 #define _STACK_H_
 
+#include <stdbool.h>
 #include "defines.h"
 
 #define MAX_STACK 512

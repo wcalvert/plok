@@ -1,7 +1,6 @@
 #ifndef _LIST_H_
 #define _LIST_H_
 
-//#include "defines.h"
 #include "types.h"
 
 typedef struct node {
@@ -18,7 +17,6 @@ typedef struct list {
 
 list_t * list_factory(void);
 void list_append(list_t *list, object *o);
-node_t * list_delete_node(list_t *list, node_t *node, unsigned int n);
 void list_delete(list_t *list, unsigned int n);
 node_t * list_get(list_t *list, unsigned int n);
 void list_destructor(list_t **list);

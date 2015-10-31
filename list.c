@@ -3,9 +3,13 @@
 #include <string.h>
 #include "list.h"
 #include "types.h"
+#include "vm.h"
 
 list_t * list_factory(void) {
     list_t *list = malloc(sizeof(list_t));
+    if(list == NULL) {
+        vm_error(ERR_NO_MEM);
+    }
     list->head = NULL;
     list->curr = NULL;
     list->size = 0;
@@ -14,8 +18,11 @@ list_t * list_factory(void) {
 
 void list_append(list_t *list, object *o) {
     list->curr = malloc(sizeof(node_t));
+    if(list->curr == NULL) {
+        vm_error(ERR_NO_MEM);
+    }
     list->curr->id = list->size;
-    
+
     list->curr->next = list->head;
     list->head = list->curr;
     list->size++;
@@ -23,7 +30,7 @@ void list_append(list_t *list, object *o) {
     list->curr->element = o;
 }
 
-node_t * list_delete_node(list_t *list, node_t *node, unsigned int n) {
+static node_t * list_delete_node(list_t *list, node_t *node, unsigned int n) {
     node_t *temp = NULL;
     if(node == NULL) {
         return NULL;
@@ -84,36 +91,9 @@ void list_print(list_t *list) {
     list->curr = list->head;
     char *temp;
     while(list->curr) {
-        temp = (char*)object_to_string(list->curr->element);
+        temp = object_to_string(list->curr->element);
         printf("id: %i, %s\n", list->curr->id, temp);
         list->curr = list->curr->next;
     }
     free(temp);
 }
-
-/*int main() {
-    stack *s = stack_factory();
-    list_t *list = list_factory();
-
-    int_obj *i = NULL;
-    int j;
-    for (j = 0; j < 10; j++) {
-        i = int_factory(123+j);
-        list_append(list, (object*)i);
-    }
-
-    node_t *temp = list_get(list,7);
-    i = (int_obj*)temp->element;
-    stack_push(s, i->val);
-    stack_print(s);
-    DWORD temp2 = stack_pop(s);
-    temp2++;
-    stack_push(s, temp2);
-    stack_print(s);
-    //list_print(list);
-
-
-    list_destructor(&list);
-    stack_destructor(s);
-
-}*/

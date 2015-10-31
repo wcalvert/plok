@@ -3,6 +3,8 @@
 
 #include "stdint.h"
 
+#define container_of(ptr, type, member) ((type *)((char *)(ptr) - offsetof(type, member)))
+
 #ifdef DEBUG
 #define debug(...) printf(__VA_ARGS__)
 #else

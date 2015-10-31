@@ -3,6 +3,8 @@
 
 typedef struct object {
     struct object_vtable *vtable;
+    unsigned char marked;
+    struct object *next;
 } object;
 
 typedef struct int_obj {

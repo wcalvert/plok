@@ -27,17 +27,17 @@ void vm_error(error_t e) {
 }
 
 inline void invoke_builtin(builtin_method_t method, stack_frame *sf) {
-    int i;
     node_t *list_val = NULL;
+    int_obj *i1 = NULL;
     
     switch(method) {
         case STACK_PRINT_INT:
-            i = stack_pop(sf->s);
-            printf("%d\n", i);
+            i1 = (int_obj*)stack_pop(sf->s);
+            printf("%d\n", i1->val);
             break;
         case LOCAL_PRINT_STRING:
-            i = stack_pop(sf->s);
-            list_val = list_get(sf->locals, i);
+            i1 = (int_obj*)stack_pop(sf->s);
+            list_val = list_get(sf->locals, i1->val);
             char *temp = object_to_string(list_val->element);
             printf("%s\n", temp);
             free(temp);
@@ -83,14 +83,15 @@ int main(void) {
 
     // index will be used to get the next byte in the code.
     // list_val is used for working with locals.
-    // value1 and value2 are values popped off the stack.
-    // itemp and stemp are for working with intermediate values while casting stuff.
+    // i1, i1, o1, and o2 are for working with stack.
+
     unsigned int index;
     node_t *list_val = NULL;
-    int value1, value2;
-    int_obj *itemp = NULL;
-    string_obj *stemp = NULL;
-
+    int_obj *i1 = NULL;
+    int_obj *i2 = NULL;
+    object *o1 = NULL;
+    object *o2 = NULL;
+    
     DISPATCH();
     for(;;) {
         op_ret:
@@ -98,11 +99,13 @@ int main(void) {
             break;
         op_iconst0:
             debug("got iconst0\n");
-            stack_push(sf->s, 0);
+            o1 = int_factory(0);
+            stack_push(sf->s, o1);
             DISPATCH();
         op_iconst1:
             debug("got iconst1\n");
-            stack_push(sf->s, 1);
+            o1 = int_factory(1);
+            stack_push(sf->s, o1);
             DISPATCH();
         op_iload:
             debug("got iload\n");
@@ -112,8 +115,8 @@ int main(void) {
                 DISPATCH();
             }
             list_val = list_get(sf->locals, index);
-            itemp = (int_obj*) list_val->element;
-            stack_push(sf->s, itemp->val);
+            o1 = list_val->element;
+            stack_push(sf->s, o1);
             DISPATCH();
         op_istore:
             debug("got istore\n");
@@ -125,21 +128,24 @@ int main(void) {
             list_val = list_get(sf->locals, index);
             DISPATCH();
         op_iadd:
-            value1 = stack_pop(sf->s);
-            value2 = stack_pop(sf->s);
-            stack_push(sf->s, value1 + value2);
+            i1 = (int_obj*)stack_pop(sf->s);
+            i2 = (int_obj*)stack_pop(sf->s);
+            i1->val = i1->val + i2->val;
+            stack_push(sf->s, (object*)i1);
             debug("got iadd\n");
             DISPATCH();
         op_imult:
-            value1 = stack_pop(sf->s);
-            value2 = stack_pop(sf->s);
-            stack_push(sf->s, value1 * value2);
+            i1 = (int_obj*)stack_pop(sf->s);
+            i2 = (int_obj*)stack_pop(sf->s);
+            i1->val = i1->val * i2->val;
+            stack_push(sf->s, (object*)i1);
             debug("got imult\n");
             DISPATCH();
         op_ineg:
             debug("got ineg\n");
-            value1 = stack_pop(sf->s);
-            stack_push(sf->s, value1 * -1);
+            i1 = (int_obj*)stack_pop(sf->s);
+            i1->val = i1->val * -1;
+            stack_push(sf->s, (object*)i1);
             DISPATCH();
         op_iinc:
             debug("got iinc\n");
@@ -149,17 +155,17 @@ int main(void) {
                 DISPATCH();
             }
             list_val = list_get(sf->locals, index);
-            itemp = (int_obj*)list_val->element;
-            itemp->val++;
+            i1 = (int_obj*)list_val->element;
+            i1->val++;
             DISPATCH();
         op_breq:
             index = code[sf->pc++];
-            value1 = stack_pop(sf->s);
+            i1 = (int_obj*)stack_pop(sf->s);
             // need to have code length available to check this - strlen will not work.
             /*if(index < 0 || index > (strlen(code) - 1)) {
                 vm_error(ERR_INVALID_CODE_ADDRESS);
             }*/
-            if(value1 == 0) {
+            if(i1->val == 0) {
                 debug("going to set pc to: %d\n", index);
                 sf->pc = index;
             }
@@ -175,16 +181,16 @@ int main(void) {
             DISPATCH();
         op_swap:
             debug("got swap\n");
-            value1 = stack_pop(sf->s);
-            value2 = stack_pop(sf->s);
-            stack_push(sf->s, value2);
-            stack_push(sf->s, value1);
+            o1 = stack_pop(sf->s);
+            o2 = stack_pop(sf->s);
+            stack_push(sf->s, o2);
+            stack_push(sf->s, o1);
             DISPATCH();
         op_dup:
             debug("got dup\n");
-            value1 = stack_pop(sf->s);
-            stack_push(sf->s, value1);
-            stack_push(sf->s, value1);
+            o1 = stack_pop(sf->s);
+            stack_push(sf->s, o1);
+            stack_push(sf->s, o1);
             DISPATCH();
         op_sload:
             debug("got sload\n");

@@ -16,7 +16,7 @@ list_t * list_factory(void) {
     return list;
 }
 
-void list_append(list_t *list, object *o) {
+void list_append(list_t *list, object_t *o) {
     list->curr = malloc(sizeof(node_t));
     if(list->curr == NULL) {
         vm_error(ERR_NO_MEM);
@@ -89,11 +89,11 @@ void list_print(list_t *list) {
         return;
     }
     list->curr = list->head;
-    char *temp;
+    char *temp = NULL;
     while(list->curr) {
         temp = object_to_string(list->curr->element);
         printf("id: %i, %s\n", list->curr->id, temp);
         list->curr = list->curr->next;
-    }
-    free(temp);
+        free(temp);
+    }  
 }

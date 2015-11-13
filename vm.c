@@ -19,6 +19,12 @@ void vm_error(error_t e) {
         case ERR_INVALID_BUILTIN:
             fprintf(stderr, "ERR_INVALID_BUILTIN: attempted to call unknown built-in method\n");
             break;
+        case ERR_STACK_UNDERFLOW:
+            fprintf(stderr, "ERR_STACK_UNDERFLOW: tried to pop from empty stack\n");
+            break;
+        case ERR_STACK_OVERFLOW:
+            fprintf(stderr, "ERR_STACK_OVERFLOW: tried to push onto full stack\n");
+            break;
         default:
             fprintf(stderr, "Unknown error!\n");
             break;
@@ -34,20 +40,20 @@ inline void invoke_builtin(builtin_method_t method, stack_frame_t *sf) {
     
     switch(method) {
         case STACK_PRINT_OBJ:
-            o = stack_pop(sf->s);
+            o = stack_pop(sf);
             temp = object_to_string(o);
             printf("%s\n", temp);
             free(temp);
             break;
         case LOCAL_PRINT_OBJ:
-            i1 = (int_obj_t*)stack_pop(sf->s);
+            i1 = (int_obj_t*)stack_pop(sf);
             list_val = list_get(sf->locals, i1->val);
             temp = object_to_string(list_val->element);
             printf("%s\n", temp);
             free(temp);
             break;
         case CONSTANT_PRINT_OBJ:
-            i1 = (int_obj_t*)stack_pop(sf->s);
+            i1 = (int_obj_t*)stack_pop(sf);
             list_val = list_get(sf->constants, i1->val);
             temp = object_to_string(list_val->element);
             printf("%s\n", temp);
@@ -83,8 +89,8 @@ void mark(object_t *object) {
 }
 
 void mark_all(stack_frame_t *sf) {
-    for (int i = 0; i <= sf->s->tos; i++) {
-        mark(sf->s->data[i]);
+    for (int i = 0; i <= sf->tos; i++) {
+        mark(sf->stack[i]);
     }
 }
 
@@ -154,11 +160,11 @@ int run(vm_t *vm, stack_frame_t *sf, unsigned char *code) {
             break;
         op_iconst0:
             debug("got iconst0\n");
-            stack_push(sf->s, OBJ_CREATE(int_factory, 0, vm, sf, gc));
+            stack_push(sf, OBJ_CREATE(int_factory, 0, vm, sf, gc));
             DISPATCH();
         op_iconst1:
             debug("got iconst1\n");
-            stack_push(sf->s, OBJ_CREATE(int_factory, 1, vm, sf, gc));
+            stack_push(sf, OBJ_CREATE(int_factory, 1, vm, sf, gc));
             DISPATCH();
         op_iload:
             debug("got iload\n");
@@ -169,7 +175,7 @@ int run(vm_t *vm, stack_frame_t *sf, unsigned char *code) {
             }
             list_val = list_get(sf->locals, index);
             o1 = list_val->element;
-            stack_push(sf->s, o1);
+            stack_push(sf, o1);
             DISPATCH();
         op_istore:
             debug("got istore\n");
@@ -181,24 +187,24 @@ int run(vm_t *vm, stack_frame_t *sf, unsigned char *code) {
             list_val = list_get(sf->locals, index);
             DISPATCH();
         op_iadd:
-            i1 = (int_obj_t*)stack_pop(sf->s);
-            i2 = (int_obj_t*)stack_pop(sf->s);
+            i1 = (int_obj_t*)stack_pop(sf);
+            i2 = (int_obj_t*)stack_pop(sf);
             i1->val = i1->val + i2->val;
-            stack_push(sf->s, (object_t*)i1);
+            stack_push(sf, (object_t*)i1);
             debug("got iadd\n");
             DISPATCH();
         op_imult:
-            i1 = (int_obj_t*)stack_pop(sf->s);
-            i2 = (int_obj_t*)stack_pop(sf->s);
+            i1 = (int_obj_t*)stack_pop(sf);
+            i2 = (int_obj_t*)stack_pop(sf);
             i1->val = i1->val * i2->val;
-            stack_push(sf->s, (object_t*)i1);
+            stack_push(sf, (object_t*)i1);
             debug("got imult\n");
             DISPATCH();
         op_ineg:
             debug("got ineg\n");
-            i1 = (int_obj_t*)stack_pop(sf->s);
+            i1 = (int_obj_t*)stack_pop(sf);
             i1->val = i1->val * -1;
-            stack_push(sf->s, (object_t*)i1);
+            stack_push(sf, (object_t*)i1);
             DISPATCH();
         op_iinc:
             debug("got iinc\n");
@@ -213,7 +219,7 @@ int run(vm_t *vm, stack_frame_t *sf, unsigned char *code) {
             DISPATCH();
         op_breq:
             index = code[sf->pc++];
-            i1 = (int_obj_t*)stack_pop(sf->s);
+            i1 = (int_obj_t*)stack_pop(sf);
             // need to have code length available to check this - strlen will not work.
             /*if(index < 0 || index > (strlen(code) - 1)) {
                 vm_error(ERR_INVALID_CODE_ADDRESS);
@@ -230,20 +236,20 @@ int run(vm_t *vm, stack_frame_t *sf, unsigned char *code) {
             DISPATCH();
         op_pop:
             debug("got pop\n");
-            stack_pop(sf->s);
+            stack_pop(sf);
             DISPATCH();
         op_swap:
             debug("got swap\n");
-            o1 = stack_pop(sf->s);
-            o2 = stack_pop(sf->s);
-            stack_push(sf->s, o2);
-            stack_push(sf->s, o1);
+            o1 = stack_pop(sf);
+            o2 = stack_pop(sf);
+            stack_push(sf, o2);
+            stack_push(sf, o1);
             DISPATCH();
         op_dup:
             debug("got dup\n");
-            o1 = stack_pop(sf->s);
-            stack_push(sf->s, o1);
-            stack_push(sf->s, o1);
+            o1 = stack_pop(sf);
+            stack_push(sf, o1);
+            stack_push(sf, o1);
             DISPATCH();
         op_sload:
             debug("got sload\n");
